@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EBS Link Engine</title>
+    
+    <!-- PWA & Mobile Standalone App Configuration -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="EBS Engine">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/512/broadcast.png">
+
+    <style>
+        /* Base Configuration & EP Color Strategy */
+        :root {
+            --ep-blue: #003399;
+            --ep-blue-dark: #002266;
+            --ep-yellow: #FFCC00;
+            --ep-yellow-hover: #E5B800;
+            --text-dark: #1A202C;
+            --text-muted: #4A5568;
+            --bg-page: #F4F7FA;
+            --bg-card: #FFFFFF;
+            --border-color: #E2E8F0;
+            --focus-ring: rgba(0, 51, 153, 0.2);
+            --success: #10B981;
+            --input-bg: #F8FAFC;
+        }
+
+        /* Seamless System Dark Mode Configuration */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --ep-blue: #002266;
+                --ep-blue-dark: #001133;
+                --text-dark: #E2E8F0;
+                --text-muted: #A0AEC0;
+                --bg-page: #0A0F1D;
+                --bg-card: #141B2D;
+                --border-color: #2D3748;
+                --focus-ring: rgba(255, 204, 0, 0.3);
+                --input-bg: #1A2333;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-dark);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 32px 16px;
+            transition: background-color 0.3s;
+        }
+
+        .app-container {
+            background: var(--bg-card);
+            width: 100%;
+            max-width: 480px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05), 0 4px 6px rgba(0, 0, 0, 0.02);
+            overflow: hidden;
+            transition: background-color 0.3s;
+        }
+
+        .header {
+            background-color: var(--ep-blue);
+            color: #FFFFFF;
+            padding: 24px 20px;
+            text-align: center;
+            border-bottom: 4px solid var(--ep-yellow);
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .header p {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .content {
+            padding: 24px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .label-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        label {
+            font-size: 0.8125rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+        }
+
+        select, input[type="datetime-local"] {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 16px; 
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background-color: var(--input-bg);
+            color: var(--text-dark);
+            transition: all 0.2s ease;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        select {
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%234A5568%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            background-size: 16px;
+            padding-right: 44px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            select {
+                background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23A0AEC0%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E");
+            }
+        }
+
+        select:focus, input[type="datetime-local"]:focus {
+            outline: none;
+            border-color: var(--ep-blue);
+            box-shadow: 0 0 0 3px var(--focus-ring);
+            background-color: var(--bg-card);
+        }
+
+        .time-toggle {
+            display: flex;
+            background: var(--input-bg);
+            border-radius: 10px;
+            padding: 4px;
+            gap: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .time-toggle label {
+            flex: 1;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+
+        .time-toggle input[type="radio"] {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        .time-toggle input[type="radio"]:checked + label {
+            background: var(--bg-card);
+            color: var(--ep-blue);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .time-toggle input[type="radio"]:checked + label {
+                color: var(--ep-yellow);
+            }
+        }
+
+        .custom-time-panel {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, margin 0.25s ease;
+            margin-top: 0;
+        }
+
+        .custom-time-panel.open {
+            max-height: 80px;
+            opacity: 1;
+            margin-top: 4px;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 4px 0;
+        }
+
+        .result-box {
+            background: rgba(0, 51, 153, 0.03);
+            border: 1px dashed rgba(0, 51, 153, 0.25);
+            border-radius: 10px;
+            padding: 14px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.8125rem;
+            color: var(--ep-blue);
+            word-break: break-all;
+            line-height: 1.45;
+            min-height: 64px;
+            user-select: all;
+            -webkit-user-select: all;
+            transition: all 0.2s;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .result-box {
+                background: rgba(255, 204, 0, 0.02);
+                border: 1px dashed rgba(255, 204, 0, 0.2);
+                color: #A3BFFA;
+            }
+        }
+
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--success);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .live-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background-color: var(--success);
+            border-radius: 50%;
+            display: inline-block;
+            animation: livePulse 1.8s infinite;
+        }
+
+        @keyframes livePulse {
+            0% { transform: scale(0.9); opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+            70% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.9); opacity: 0; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .action-row {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .btn-copy {
+            flex: 3;
+            background-color: var(--ep-yellow);
+            color: var(--ep-blue-dark);
+            border: none;
+            border-radius: 10px;
+            padding: 16px;
+            font-size: 0.9375rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 12px rgba(255, 204, 0, 0.15);
+        }
+
+        .btn-copy:active { transform: scale(0.98); }
+
+        .btn-copy.success {
+            background-color: var(--success);
+            color: #FFFFFF;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        /* Direct Workspace Portal Link */
+        .btn-trint {
+            flex: 2;
+            background-color: transparent;
+            border: 2px solid var(--border-color);
+            color: var(--text-dark);
+            border-radius: 10px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn-trint:hover {
+            border-color: var(--ep-blue);
+            color: var(--ep-blue);
+            background-color: rgba(0, 51, 153, 0.02);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .btn-trint:hover {
+                border-color: var(--ep-yellow);
+                color: var(--ep-yellow);
+                background-color: rgba(255, 204, 0, 0.02);
+            }
+        }
+
+        .status-text {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: -8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="header">
+            <h1>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                </svg>
+                EBS Link Engine
+            </h1>
+            <p>Live Trint URL Matrix</p>
+        </div>
+
+        <div class="content">
+            <div class="input-group">
+                <label for="channel">1. Select Channel</label>
+                <select id="channel"></select>
+            </div>
+
+            <div class="input-group">
+                <label for="language">2. Select Language</label>
+                <select id="language"></select>
+            </div>
+
+            <div class="input-group">
+                <label>3. Stream Time Configuration</label>
+                <div class="time-toggle">
+                    <input type="radio" name="timeMode" id="modeLive" value="live" checked>
+                    <label for="modeLive">Live Now</label>
+
+                    <input type="radio" name="timeMode" id="modeCustom" value="custom">
+                    <label for="modeCustom">Custom Time</label>
+                </div>
+            </div>
+
+            <div class="custom-time-panel" id="customTimeContainer">
+                <input type="datetime-local" id="customTime" step="1">
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="input-group">
+                <div class="label-row">
+                    <label>Generated Link Target</label>
+                    <div id="liveIndicator" class="live-badge">Live Tracking</div>
+                </div>
+                <div class="result-box" id="urlOutput">Generating payload...</div>
+            </div>
+
+            <div class="action-row">
+                <button class="btn-copy" id="copyBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    <span id="copyTxt">Copy Link</span>
+                </button>
+                <a class="btn-trint" href="https://app.trint.com/trints/realtime/live" target="_blank" rel="noopener noreferrer">
+                    Open Trint ↗
+                </a>
+            </div>
+            <div class="status-text" id="statusMsg">Engine active.</div>
+        </div>
+    </div>
+
+    <script>
+        const CHANNELS = [
+            { group: 'Brussels', name: 'Channel 01 BXL', code: '2113747/channel-01-bxl' },
+            { group: 'Brussels', name: 'Channel 02 BXL', code: '2113748/channel-02-bxl' },
+            { group: 'Brussels', name: 'Channel 03 BXL', code: '2113749/channel-03-bxl' },
+            { group: 'Brussels', name: 'Channel 04 BXL', code: '2113750/channel-04-bxl' },
+            { group: 'Brussels', name: 'Channel 05 BXL', code: '2113751/channel-05-bxl' },
+            { group: 'Brussels', name: 'Channel 06 BXL', code: '2113752/channel-06-bxl' },
+            { group: 'Brussels', name: 'Channel 07 BXL', code: '2113753/channel-07-bxl' },
+            { group: 'Brussels', name: 'Channel 08 BXL', code: '2113754/channel-08-bxl' },
+            { group: 'Brussels', name: 'Channel 09 BXL', code: '2113755/channel-09-bxl' },
+            { group: 'Brussels', name: 'Channel 10 BXL', code: '2113756/channel-10-bxl' },
+            { group: 'Brussels', name: 'Channel 11 BXL', code: '2113757/channel-11-bxl' },
+            { group: 'Brussels', name: 'Channel 12 BXL', code: '2113758/channel-12-bxl' },
+            { group: 'Brussels', name: 'Channel 13 BXL', code: '2113759/channel-13-bxl' },
+            { group: 'Brussels', name: 'Channel 14 BXL', code: '2113760/channel-14-bxl' },
+            { group: 'Brussels', name: 'Channel 15 BXL', code: '2113761/channel-15-bxl' },
+            { group: 'Brussels', name: 'Channel 16 BXL', code: '2113762/channel-16-bxl' },
+            { group: 'Brussels', name: 'Channel 17 BXL', code: '2113763/channel-17-bxl' },
+            { group: 'Brussels', name: 'Channel 18 BXL', code: '2113764/channel-18-bxl' },
+            { group: 'HEM Brussels', name: 'Channel HEM 01 BXL', code: '2113707/channel-hem-01-bxl' },
+            { group: 'HEM Brussels', name: 'Channel HEM 02 BXL', code: '2113709/channel-hem-02-bxl' },
+            { group: 'HEM Brussels', name: 'Channel HEM 03 BXL', code: '2113710/channel-hem-03-bxl' },
+            { group: 'HEM Brussels', name: 'Channel HEM 04 BXL', code: '2113711/channel-hem-04-bxl' },
+            { group: 'Strasbourg', name: 'Channel 01 STB', code: '2113713/channel-01-stb' },
+            { group: 'Strasbourg', name: 'Channel 02 STB', code: '2113714/channel-02-stb' },
+            { group: 'Strasbourg', name: 'Channel 03 STB', code: '2113715/channel-03-stb' },
+            { group: 'Strasbourg', name: 'Channel 04 STB', code: '2113716/channel-04-stb' },
+            { group: 'Strasbourg', name: 'Channel 05 STB', code: '2113717/channel-05-stb' },
+            { group: 'Strasbourg', name: 'Channel 06 STB', code: '2113718/channel-06-stb' },
+            { group: 'Strasbourg', name: 'Channel 07 STB', code: '2113719/channel-07-stb' },
+            { group: 'Strasbourg', name: 'Channel 08 STB', code: '2113720/channel-08-stb' }
+        ];
+
+        const LANGUAGES = [
+            { name: 'English', code: 'qbd' }, { name: 'Original', code: 'qbf' },
+            { name: 'French', code: 'qbb' }, { name: 'German', code: 'qbc' },
+            { name: 'Italian', code: 'qbe' }, { name: 'Spanish', code: 'qaf' },
+            { name: 'Greek', code: 'qax' }, { name: 'Portuguese', code: 'qat' },
+            { name: 'Dutch', code: 'qay' }, { name: 'Danish', code: 'qaq' },
+            { name: 'Finnish', code: 'qav' }, { name: 'Swedish', code: 'qan' },
+            { name: 'Czech', code: 'qai' }, { name: 'Estonian', code: 'qao' },
+            { name: 'Latvian', code: 'qak' }, { name: 'Lithuanian', code: 'qad' },
+            { name: 'Hungarian', code: 'qaw' }, { name: 'Maltese', code: 'qba' },
+            { name: 'Polish', code: 'qau' }, { name: 'Slovak', code: 'qap' },
+            { name: 'Slovenian', code: 'qas' }, { name: 'Bulgarian', code: 'qam' },
+            { name: 'Romanian', code: 'qal' }, { name: 'Croatian', code: 'qah' }
+        ];
+
+        const elChannel = document.getElementById('channel');
+        const elLang = document.getElementById('language');
+        const elModeLive = document.getElementById('modeLive');
+        const elModeCustom = document.getElementById('modeCustom');
+        const elCustomTimeContainer = document.getElementById('customTimeContainer');
+        const elCustomTime = document.getElementById('customTime');
+        const elUrlOutput = document.getElementById('urlOutput');
+        const elCopyBtn = document.getElementById('copyBtn');
+        const elCopyTxt = document.getElementById('copyTxt');
+        const elStatusMsg = document.getElementById('statusMsg');
+        const elLiveIndicator = document.getElementById('liveIndicator');
+
+        let currentUrl = '';
+
+        function init() {
+            const groups = {};
+            CHANNELS.forEach(ch => {
+                if (!groups[ch.group]) groups[ch.group] = [];
+                groups[ch.group].push(ch);
+            });
+
+            for (const [groupName, channels] of Object.entries(groups)) {
+                const optGroup = document.createElement('optgroup');
+                optGroup.label = groupName;
+                channels.forEach(ch => {
+                    const opt = document.createElement('option');
+                    opt.value = ch.code;
+                    opt.textContent = ch.name;
+                    optGroup.appendChild(opt);
+                });
+                elChannel.appendChild(optGroup);
+            }
+
+            LANGUAGES.forEach(lang => {
+                const opt = document.createElement('option');
+                opt.value = lang.code;
+                opt.textContent = lang.name;
+                elLang.appendChild(opt);
+            });
+
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            elCustomTime.value = now.toISOString().slice(0,16);
+
+            handleModeChange();
+        }
+
+        function buildLink(isExtracting = false) {
+            const channelCode = elChannel.value;
+            const langCode = elLang.value;
+            let unixTime = 0;
+
+            if (elModeLive.checked) {
+                unixTime = Math.floor(Date.now() / 1000);
+                elLiveIndicator.style.visibility = 'visible';
+                elLiveIndicator.style.opacity = '1';
+            } else {
+                const val = elCustomTime.value;
+                if (!val) return; 
+                const normalizedStr = val.replace('T', ' ').replace(/-/g, '/');
+                unixTime = Math.floor(new Date(normalizedStr).getTime() / 1000);
+                elLiveIndicator.style.opacity = '0';
+                setTimeout(() => { if(!elModeCustom.checked) elLiveIndicator.style.visibility = 'hidden'; }, 200);
+            }
+
+            currentUrl = `https://live.media.eup.glcloud.eu/hls/live/${channelCode}/index-archive.m3u8?startTime=${unixTime}&audiotrack=${langCode}&resolution=720,360&rw=true`;
+            
+            if (elModeLive.checked && !isExtracting) {
+                elUrlOutput.textContent = `https://live.media.eup.glcloud.eu/hls/live/${channelCode}/index-archive.m3u8?startTime=[LIVE_TIMESTAMP]&audiotrack=${langCode}...`;
+            } else {
+                elUrlOutput.textContent = currentUrl;
+            }
+        }
+
+        function handleModeChange() {
+            if (elModeLive.checked) {
+                elCustomTimeContainer.classList.remove('open');
+                elStatusMsg.textContent = "Link compiles to your exact click time upon copying.";
+                buildLink();
+            } else {
+                elLiveIndicator.style.visibility = 'hidden';
+                elCustomTimeContainer.classList.add('open');
+                elStatusMsg.textContent = "Engine ready.";
+                buildLink();
+            }
+        }
+
+        elChannel.addEventListener('change', () => buildLink());
+        elLang.addEventListener('change', () => buildLink());
+        elModeLive.addEventListener('change', handleModeChange);
+        elModeCustom.addEventListener('change', handleModeChange);
+        elCustomTime.addEventListener('input', () => buildLink());
+
+        async function copyToClipboard() {
+            buildLink(true);
+            if (!currentUrl) return;
+
+            try {
+                if (!navigator.clipboard) throw new Error();
+                await navigator.clipboard.writeText(currentUrl);
+                triggerSuccess();
+            } catch (err) {
+                const textArea = document.createElement("textarea");
+                textArea.value = currentUrl;
+                textArea.style.position = "absolute";
+                textArea.style.left = "-9999px";
+                textArea.setAttribute("readonly", ""); 
+                document.body.appendChild(textArea);
+                const selected = document.getSelection().rangeCount > 0 ? document.getSelection().getRangeAt(0) : false;
+                textArea.select();
+                textArea.setSelectionRange(0, 999999); 
+                document.execCommand("copy");
+                document.body.removeChild(textArea);
+                if (selected) {
+                    document.getSelection().removeAllRanges();
+                    document.getSelection().addRange(selected);
+                }
+                triggerSuccess();
+            }
+        }
+
+        function triggerSuccess() {
+            elCopyBtn.classList.add('success');
+            elCopyTxt.textContent = "Link Copied!";
+            elStatusMsg.textContent = "URL captured and transferred to clipboard.";
+            
+            setTimeout(() => {
+                elCopyBtn.classList.remove('success');
+                elCopyTxt.textContent = "Copy Link";
+                handleModeChange();
+            }, 2000);
+        }
+
+        elCopyBtn.addEventListener('click', copyToClipboard);
+
+        // Register App Service Worker safely
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
