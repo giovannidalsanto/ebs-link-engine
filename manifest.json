@@ -8,7 +8,7 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://img.icons8.com/fluency/512/broadcast.png",
+      "logo.png": "https://img.icons8.com/fluency/512/broadcast.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
